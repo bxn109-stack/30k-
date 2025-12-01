@@ -139,10 +139,36 @@
       overflow-y: auto;
     }
 
+    .grid-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.3rem;
+    }
     .grid-title {
       font-size: 0.8rem;
       color: var(--text-muted);
-      margin-bottom: 0.35rem;
+    }
+
+    .recommendation-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      background: var(--card-bg);
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem;
+      color: var(--text-muted);
+      border: 1px dashed var(--border-subtle);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .recommendation-chip strong {
+      color: var(--accent);
     }
 
     .grid {
@@ -260,6 +286,14 @@
       color: var(--text-muted);
     }
 
+    .footer {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Menu overlay / sheet */
     .menu-overlay {
       position: fixed;
       inset: 0;
@@ -454,28 +488,6 @@
       margin-top: 0.4rem;
     }
 
-    .recommend-summary {
-      font-size: 0.8rem;
-      margin-bottom: 0.25rem;
-      color: var(--text-main);
-    }
-    .recommend-list {
-      margin: 0.25rem 0 0;
-      padding-left: 1.1rem;
-      font-size: 0.78rem;
-      color: var(--text-main);
-    }
-    .recommend-list li {
-      margin-bottom: 0.2rem;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 0.5rem;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
     @media (max-width: 480px) {
       .header {
         align-items: flex-start;
@@ -483,6 +495,9 @@
       .bottom-inner {
         flex-wrap: wrap;
         align-items: flex-start;
+      }
+      .recommendation-chip {
+        max-width: 100%;
       }
     }
   </style>
@@ -501,7 +516,12 @@
 
     <main class="main-content">
       <div class="grid-panel">
-        <div class="grid-title">Your challenge grid</div>
+        <div class="grid-title-row">
+          <div class="grid-title">Your challenge grid</div>
+          <div class="recommendation-chip" id="recommendationChip">
+            Loading recommendation…
+          </div>
+        </div>
         <div class="grid" id="grid"></div>
       </div>
       <div class="footer">
@@ -517,7 +537,7 @@
           <input type="number" id="bulkInput" class="inline-input" min="1" placeholder="1000" />
           <button class="btn secondary" id="bulkApplyBtn">Apply</button>
         </div>
-        <button class="btn" id="quickDailyBtn">Daily Save</button>
+        <button class="btn" id="quickDailyBtn">Save Today (Recommended)</button>
       </div>
     </div>
 
@@ -525,7 +545,7 @@
     <div class="menu-overlay" id="menuOverlay">
       <div class="menu-panel">
         <div class="menu-header">
-          <div class="menu-title">Settings & Stats</div>
+          <div class="menu-title">Settings, Stats & Recommendations</div>
           <button class="btn secondary" id="closeMenuBtn">Close ✕</button>
         </div>
 
@@ -588,13 +608,13 @@
         </div>
 
         <div class="panel">
-          <div class="section-title">Smart Recommendations</div>
-          <div class="recommend-summary" id="recommendSummary">Calculating based on your goal and start date…</div>
-          <ul class="recommend-list">
-            <li id="recommendOnTrack"></li>
-            <li id="recommendDaily"></li>
-            <li id="recommendBulk"></li>
-          </ul>
+          <div class="section-title">Recommendations</div>
+          <div class="small-text" id="recommendationSummary">
+            Loading recommendations…
+          </div>
+          <div class="row-flex" style="margin-top:0.35rem;">
+            <button class="btn secondary" id="applyRecommendationBtn">Apply Today’s Recommendation</button>
+          </div>
         </div>
 
         <div class="panel">
@@ -661,7 +681,7 @@
       max: 150,
       theme: "light",
       dailyMode: false,
-      startDate: null, // ISO string YYYY-MM-DD
+      challengeStartDate: null, // set on first run
     };
 
     function formatMoney(n) {
@@ -677,23 +697,28 @@
 
     function loadSettings() {
       const stored = localStorage.getItem(SETTINGS_KEY);
-      if (!stored) return { ...defaultSettings };
-      try {
-        const obj = JSON.parse(stored);
-        return { ...defaultSettings, ...obj };
-      } catch {
-        return { ...defaultSettings };
+      let s;
+      if (!stored) {
+        s = { ...defaultSettings };
+      } else {
+        try {
+          const obj = JSON.parse(stored);
+          s = { ...defaultSettings, ...obj };
+        } catch {
+          s = { ...defaultSettings };
+        }
       }
+      if (!s.challengeStartDate) {
+        s.challengeStartDate = todayISO();
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      }
+      return s;
     }
     function saveSettings(settings) {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     }
 
     let settings = loadSettings();
-    if (!settings.startDate) {
-      settings.startDate = todayISO();
-      saveSettings(settings);
-    }
     document.body.setAttribute("data-theme", settings.theme || "light");
 
     function generateAmounts(goal, min, max) {
@@ -824,7 +849,9 @@
     let notes = loadNotes();
     let rewards = loadRewards();
 
+    // DOM refs
     const gridEl = document.getElementById("grid");
+    const recommendationChipEl = document.getElementById("recommendationChip");
     const bulkInput = document.getElementById("bulkInput");
     const bulkApplyBtn = document.getElementById("bulkApplyBtn");
     const quickDailyBtn = document.getElementById("quickDailyBtn");
@@ -867,10 +894,8 @@
     const importBtn = document.getElementById("importBtn");
     const exportArea = document.getElementById("exportArea");
 
-    const recommendSummaryEl = document.getElementById("recommendSummary");
-    const recommendOnTrackEl = document.getElementById("recommendOnTrack");
-    const recommendDailyEl = document.getElementById("recommendDaily");
-    const recommendBulkEl = document.getElementById("recommendBulk");
+    const recommendationSummaryEl = document.getElementById("recommendationSummary");
+    const applyRecommendationBtn = document.getElementById("applyRecommendationBtn");
 
     themeSelect.value = settings.theme;
     goalInput.value = settings.goal;
@@ -878,6 +903,7 @@
     maxInput.value = settings.max;
     toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
 
+    // Stats / recompute helpers
     function computeStats() {
       let totalSaved = 0;
       let daysDone = 0;
@@ -891,9 +917,110 @@
     }
 
     function computeLevelXP(totalSaved) {
-      const xp = Math.floor(totalSaved / 10);
+      const xp = Math.floor(totalSaved / 10); // simple: $10 = 1 XP
       const level = Math.max(1, Math.floor(xp / 100) + 1);
       return { level, xp };
+    }
+
+    function getChallengeDayNumber() {
+      if (!settings.challengeStartDate) return 1;
+      const start = new Date(settings.challengeStartDate);
+      const today = new Date(todayISO());
+      const diffMs = today - start;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      let dayNumber = diffDays + 1;
+      if (dayNumber < 1) dayNumber = 1;
+      if (dayNumber > DAYS) dayNumber = DAYS;
+      return dayNumber;
+    }
+
+    function computeRecommendation() {
+      const { totalSaved, daysDone } = computeStats();
+      const goal = settings.goal;
+      const challengeDay = getChallengeDayNumber();
+
+      const expectedSaved = goal * (challengeDay / DAYS);
+      const diff = totalSaved - expectedSaved;
+
+      const remaining = [];
+      for (let i = 0; i < amounts.length; i++) {
+        if (!doneSet.has(i)) remaining.push({ idx: i, amt: amounts[i] });
+      }
+
+      let statusLabel;
+      let statusDetail;
+      if (remaining.length === 0) {
+        statusLabel = "Finished 🎉";
+        statusDetail = "You’ve completed every square. Incredible.";
+        return {
+          statusLabel,
+          statusDetail,
+          recommendedIdx: null,
+          recommendedAmount: null,
+          chipText: "Challenge complete 🎉"
+        };
+      }
+
+      const behind = diff < -goal * 0.02; // more than ~2% behind
+      const ahead = diff > goal * 0.02;
+
+      if (behind) {
+        statusLabel = "Behind a bit";
+        statusDetail = `You’re about ${formatMoney(Math.round(Math.abs(diff)))} behind where you’d be on a perfectly even pace for day ${challengeDay}.`;
+      } else if (ahead) {
+        statusLabel = "Ahead of schedule";
+        statusDetail = `You’re ahead by about ${formatMoney(Math.round(diff))} compared to an even pace for day ${challengeDay}.`;
+      } else {
+        statusLabel = "On track";
+        statusDetail = `You’re roughly on pace for day ${challengeDay}.`;
+      }
+
+      // Pick recommended square
+      let recommendedIdx = null;
+      let recommendedAmount = null;
+
+      // sort by amount
+      const sorted = remaining.slice().sort((a, b) => a.amt - b.amt);
+      if (behind) {
+        // pick one of the largest squares to catch up
+        const choice = sorted[sorted.length - 1];
+        recommendedIdx = choice.idx;
+        recommendedAmount = choice.amt;
+      } else if (ahead) {
+        // pick one of the smallest squares to give yourself an easier day
+        const choice = sorted[0];
+        recommendedIdx = choice.idx;
+        recommendedAmount = choice.amt;
+      } else {
+        // pick around the middle (median-ish)
+        const mid = Math.floor(sorted.length / 2);
+        const choice = sorted[mid];
+        recommendedIdx = choice.idx;
+        recommendedAmount = choice.amt;
+      }
+
+      const chipText = `Today: save ${formatMoney(recommendedAmount)} (${statusLabel.toLowerCase()})`;
+
+      const remainingDays = DAYS - challengeDay;
+      const remainingGoal = goal - totalSaved;
+      let paceLine;
+      if (remainingDays > 0 && remainingGoal > 0) {
+        const neededPerDay = remainingGoal / remainingDays;
+        paceLine = `To finish on time, you need about ${formatMoney(Math.round(neededPerDay))} per day from here.`;
+      } else {
+        paceLine = `You’re at or past your planned timeline. Anything extra is a bonus.`;
+      }
+
+      const summary = `${statusLabel}: ${statusDetail} ${paceLine} Recommended square for today: Day ${recommendedIdx + 1} for ${formatMoney(recommendedAmount)}.`;
+
+      return {
+        statusLabel,
+        statusDetail,
+        recommendedIdx,
+        recommendedAmount,
+        chipText,
+        summary
+      };
     }
 
     function renderMilestones(totalSaved) {
@@ -1011,67 +1138,10 @@
       });
     }
 
-    function renderRecommendations(totalSaved, daysDone) {
-      const goal = settings.goal;
-      if (!settings.startDate) {
-        settings.startDate = todayISO();
-        saveSettings(settings);
-      }
-
-      let startDate = null;
-      try {
-        startDate = new Date(settings.startDate);
-        if (isNaN(startDate.getTime())) startDate = null;
-      } catch {
-        startDate = null;
-      }
-
-      let daysElapsed = 1;
-      if (startDate) {
-        const today = new Date(todayISO());
-        const diffMs = today - startDate;
-        const d = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
-        daysElapsed = Math.max(1, Math.min(DAYS, d));
-      }
-
-      const idealSaved = goal * (daysElapsed / DAYS);
-      const remaining = Math.max(0, goal - totalSaved);
-      const remainingDays = Math.max(1, DAYS - daysDone);
-      const recommendedDaily = Math.ceil(remaining / remainingDays);
-
-      const margin = Math.max(50, goal * 0.01);
-      const diff = totalSaved - idealSaved;
-
-      let summary = `Day ${daysElapsed} of ${DAYS}.`;
-      if (startDate) summary += ` Started on ${settings.startDate}.`;
-      recommendSummaryEl.textContent = summary;
-
-      if (diff >= margin) {
-        recommendOnTrackEl.textContent = `You are ahead by ${formatMoney(Math.round(diff))} compared to a perfectly even pace. You’ve given your future self some breathing room.`;
-      } else if (diff <= -margin) {
-        recommendOnTrackEl.textContent = `You are behind by ${formatMoney(Math.round(-diff))} compared to a perfectly even pace. It’s fixable with a few stronger days.`;
-      } else {
-        recommendOnTrackEl.textContent = `You are roughly on track with your goal based on your start date. Nice consistency.`;
-      }
-
-      recommendDailyEl.textContent = `If you saved about ${formatMoney(recommendedDaily)} per remaining completed day, you would finish the challenge on time.`;
-
-      let recommendedBulk = 0;
-      if (diff < -margin) {
-        const behind = -diff;
-        recommendedBulk = Math.min(
-          remaining,
-          Math.ceil(behind / 50) * 50
-        );
-        recommendBulkEl.textContent = `To catch up quickly, a bulk save of around ${formatMoney(
-          recommendedBulk
-        )} would put you back near the ideal pace.`;
-      } else {
-        recommendedBulk = Math.min(remaining, recommendedDaily * 2);
-        recommendBulkEl.textContent = `Feeling strong? A bulk save of about ${formatMoney(
-          recommendedBulk
-        )} would push you ahead and make future days lighter.`;
-      }
+    function renderRecommendations() {
+      const rec = computeRecommendation();
+      recommendationChipEl.textContent = rec.chipText;
+      recommendationSummaryEl.textContent = rec.summary;
     }
 
     function renderStatsAndMeta() {
@@ -1097,7 +1167,7 @@
       renderMilestones(totalSaved);
       renderAchievements(totalSaved, daysDone, streak);
       renderRewards(totalSaved);
-      renderRecommendations(totalSaved, daysDone);
+      renderRecommendations();
     }
 
     function renderGrid() {
@@ -1197,4 +1267,328 @@
       renderStatsAndMeta();
     }
 
-    function pickRandomDay()
+    function pickRandomDay() {
+      const remaining = [];
+      for (let i = 0; i < amounts.length; i++) {
+        if (!doneSet.has(i)) remaining.push(i);
+      }
+      if (!remaining.length) {
+        alert("All days are already completed. 🎉");
+        return null;
+      }
+      const idx = remaining[Math.floor(Math.random() * remaining.length)];
+      return idx;
+    }
+
+    function applyRecommendedDay() {
+      const rec = computeRecommendation();
+      let idx = rec.recommendedIdx;
+      if (idx === null || typeof idx !== "number") {
+        idx = pickRandomDay();
+      }
+      if (idx === null || idx === undefined) return;
+      if (!doneSet.has(idx)) {
+        doneSet.add(idx);
+        saveDoneSet(doneSet);
+        registerSaveEvent();
+      }
+      renderAll();
+      const cell = document.getElementById("cell-" + idx);
+      if (cell) {
+        cell.scrollIntoView({ behavior: "smooth", block: "center" });
+        cell.classList.add("pop");
+        setTimeout(() => cell.classList.remove("pop"), 220);
+      }
+    }
+
+    function pickAndSaveRandomDay() {
+      const idx = pickRandomDay();
+      if (idx === null) return;
+      if (!doneSet.has(idx)) {
+        doneSet.add(idx);
+        saveDoneSet(doneSet);
+        registerSaveEvent();
+      }
+      renderAll();
+      const cell = document.getElementById("cell-" + idx);
+      if (cell) {
+        cell.scrollIntoView({ behavior: "smooth", block: "center" });
+        cell.classList.add("pop");
+        setTimeout(() => cell.classList.remove("pop"), 220);
+      }
+    }
+
+    function applyBulkSave() {
+      const val = Number(bulkInput.value);
+      if (!val || val <= 0) {
+        alert("Enter a positive bulk amount (e.g. 1000).");
+        return;
+      }
+      let remaining = [];
+      for (let i = 0; i < amounts.length; i++) {
+        if (!doneSet.has(i)) remaining.push({ idx: i, amt: amounts[i] });
+      }
+      if (!remaining.length) {
+        alert("All days are already completed. 🎉");
+        return;
+      }
+      remaining.sort((a, b) => b.amt - a.amt);
+      let budget = val;
+      const touched = [];
+      for (const item of remaining) {
+        if (item.amt <= budget) {
+          budget -= item.amt;
+          doneSet.add(item.idx);
+          touched.push(item.idx);
+          if (budget <= 0) break;
+        }
+      }
+      if (!touched.length) {
+        alert("Bulk amount is smaller than the smallest remaining day.");
+        return;
+      }
+      saveDoneSet(doneSet);
+      registerSaveEvent();
+      renderAll();
+      const firstIdx = touched[0];
+      const cell = document.getElementById("cell-" + firstIdx);
+      if (cell) {
+        cell.scrollIntoView({ behavior: "smooth", block: "center" });
+        cell.classList.add("pop");
+        setTimeout(() => cell.classList.remove("pop"), 220);
+      }
+    }
+
+    function buildExportData() {
+      const streak = loadStreak();
+      return {
+        version: EXPORT_VERSION,
+        settings,
+        amounts,
+        done: Array.from(doneSet),
+        notes,
+        rewards,
+        streak,
+      };
+    }
+    function applyImportData(raw) {
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        alert("Invalid JSON.");
+        return;
+      }
+      if (!data || data.version !== EXPORT_VERSION) {
+        if (!confirm("Version mismatch or missing version. Try importing anyway?")) {
+          return;
+        }
+      }
+      if (!Array.isArray(data.amounts) || data.amounts.length !== DAYS) {
+        alert("Invalid or missing amounts array.");
+        return;
+      }
+      amounts = data.amounts.map((n) => Number(n) || 0);
+      saveAmounts(amounts);
+
+      if (data.settings) {
+        settings = { ...defaultSettings, ...data.settings };
+        if (!settings.challengeStartDate) settings.challengeStartDate = todayISO();
+        saveSettings(settings);
+        document.body.setAttribute("data-theme", settings.theme || "light");
+      }
+
+      if (Array.isArray(data.done)) {
+        doneSet = new Set(data.done);
+        saveDoneSet(doneSet);
+      } else {
+        doneSet = new Set();
+        saveDoneSet(doneSet);
+      }
+
+      notes = data.notes && typeof data.notes === "object" ? data.notes : {};
+      saveNotes(notes);
+
+      rewards = Array.isArray(data.rewards) ? data.rewards : [];
+      saveRewards(rewards);
+
+      if (data.streak && typeof data.streak === "object") {
+        saveStreak({
+          lastSaveDate: data.streak.lastSaveDate || null,
+          current: data.streak.current || 0,
+          longest: data.streak.longest || 0,
+        });
+      }
+
+      themeSelect.value = settings.theme;
+      goalInput.value = settings.goal;
+      minInput.value = settings.min;
+      maxInput.value = settings.max;
+      toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+
+      renderAll();
+      alert("Import successful!");
+    }
+
+    // Menu toggle
+    function openMenu() {
+      menuOverlay.classList.add("open");
+    }
+    function closeMenu() {
+      menuOverlay.classList.remove("open");
+    }
+    openMenuBtn.addEventListener("click", openMenu);
+    closeMenuBtn.addEventListener("click", closeMenu);
+    menuOverlay.addEventListener("click", (e) => {
+      if (e.target === menuOverlay) closeMenu();
+    });
+
+    // Events
+    bulkApplyBtn.addEventListener("click", applyBulkSave);
+
+    quickDailyBtn.addEventListener("click", () => {
+      if (!settings.dailyMode) {
+        if (confirm("Turn on Daily Save Mode and apply today’s recommendation?")) {
+          settings.dailyMode = true;
+          saveSettings(settings);
+          toggleDailyModeBtn.textContent = "Daily Save: On";
+        } else {
+          return;
+        }
+      }
+      applyRecommendedDay();
+    });
+
+    applyRecommendationBtn.addEventListener("click", applyRecommendedDay);
+
+    themeSelect.addEventListener("change", () => {
+      settings.theme = themeSelect.value;
+      saveSettings(settings);
+      document.body.setAttribute("data-theme", settings.theme);
+    });
+
+    applyGoalBtn.addEventListener("click", () => {
+      const goalVal = Number(goalInput.value) || defaultSettings.goal;
+      const minVal = Number(minInput.value) || defaultSettings.min;
+      const maxVal = Number(maxInput.value) || defaultSettings.max;
+      if (minVal <= 0 || maxVal <= 0 || goalVal <= 0) {
+        alert("Goal and min/max must be positive.");
+        return;
+      }
+      if (minVal > maxVal) {
+        alert("Min cannot be greater than max.");
+        return;
+      }
+      if (!confirm("Apply new goal/min/max? This will regenerate the challenge and reset progress.")) {
+        return;
+      }
+      settings.goal = goalVal;
+      settings.min = minVal;
+      settings.max = maxVal;
+      settings.challengeStartDate = todayISO();
+      saveSettings(settings);
+      doneSet = new Set();
+      notes = {};
+      saveDoneSet(doneSet);
+      saveNotes(notes);
+      saveStreak({ lastSaveDate: null, current: 0, longest: 0 });
+      amounts = generateAmounts(settings.goal, settings.min, settings.max);
+      saveAmounts(amounts);
+      renderAll();
+    });
+
+    toggleDailyModeBtn.addEventListener("click", () => {
+      settings.dailyMode = !settings.dailyMode;
+      saveSettings(settings);
+      toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+    });
+
+    dailyPickBtn.addEventListener("click", () => {
+      if (!settings.dailyMode) {
+        if (!confirm("Daily Save Mode is off. Turn it on and pick a random day?")) {
+          return;
+        }
+        settings.dailyMode = true;
+        saveSettings(settings);
+        toggleDailyModeBtn.textContent = "Daily Save: On";
+      }
+      pickAndSaveRandomDay();
+    });
+
+    shuffleBtn.addEventListener("click", () => {
+      if (!confirm("Shuffle/regenerate the challenge? This will reset progress, notes, and streaks.")) {
+        return;
+      }
+      doneSet = new Set();
+      notes = {};
+      saveDoneSet(doneSet);
+      saveNotes(notes);
+      saveStreak({ lastSaveDate: null, current: 0, longest: 0 });
+      settings.challengeStartDate = todayISO();
+      saveSettings(settings);
+      amounts = generateAmounts(settings.goal, settings.min, settings.max);
+      saveAmounts(amounts);
+      renderAll();
+    });
+
+    resetAllBtn.addEventListener("click", () => {
+      if (!confirm("Reset EVERYTHING? This will clear progress, notes, rewards, streaks and generate a fresh challenge.")) {
+        return;
+      }
+      localStorage.removeItem(AMOUNTS_KEY);
+      localStorage.removeItem(DONE_KEY);
+      localStorage.removeItem(NOTES_KEY);
+      localStorage.removeItem(STREAK_KEY);
+      localStorage.removeItem(REWARDS_KEY);
+      settings.dailyMode = false;
+      settings.challengeStartDate = todayISO();
+      saveSettings(settings);
+
+      amounts = loadAmounts();
+      doneSet = new Set();
+      notes = {};
+      rewards = [];
+      saveRewards(rewards);
+      toggleDailyModeBtn.textContent = "Daily Save: Off";
+      renderAll();
+    });
+
+    addRewardBtn.addEventListener("click", () => {
+      const label = (rewardLabelInput.value || "").trim();
+      const amt = Number(rewardAmountInput.value);
+      if (!label || !amt || amt <= 0) {
+        alert("Enter a label and a positive amount.");
+        return;
+      }
+      rewards.push({ label, amount: amt });
+      saveRewards(rewards);
+      rewardLabelInput.value = "";
+      rewardAmountInput.value = "";
+      renderStatsAndMeta();
+    });
+
+    exportBtn.addEventListener("click", () => {
+      const data = buildExportData();
+      const json = JSON.stringify(data);
+      exportArea.value = json;
+      exportArea.focus();
+      exportArea.select();
+    });
+
+    importBtn.addEventListener("click", () => {
+      const raw = exportArea.value.trim();
+      if (!raw) {
+        alert("Paste exported JSON into the text area first.");
+        return;
+      }
+      if (!confirm("Importing will overwrite your current progress. Continue?")) {
+        return;
+      }
+      applyImportData(raw);
+    });
+
+    // Initial render
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>30K in 365 Days Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --accent: #16a34a;
+      --accent-soft: #dcfce7;
+      --border-subtle: #e5e7eb;
+      --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.08);
+      --shadow-strong: 0 2px 8px rgba(22, 163, 74, 0.35);
+    }
+
+    body[data-theme="dark"] {
+      --bg: #020617;
+      --card-bg: #020617;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-soft: #052e16;
+      --border-subtle: #1f2933;
+      --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.7);
+      --shadow-strong: 0 2px 8px rgba(34, 197, 94, 0.45);
+    }
+
+    body[data-theme="pink"] {
+      --bg: #fdf2f8;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #9d174d;
+      --accent: #ec4899;
+      --accent-soft: #fce7f3;
+      --border-subtle: #f9a8d4;
+      --shadow-soft: 0 8px 20px rgba(219, 39, 119, 0.22);
+      --shadow-strong: 0 2px 8px rgba(219, 39, 119, 0.45);
+    }
+
+    body[data-theme="neutral"] {
+      --bg: #f3f4f6;
+      --card-bg: #f9fafb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --accent: #f59e0b;
+      --accent-soft: #fffbeb;
+      --border-subtle: #e5e7eb;
+      --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.08);
+      --shadow-strong: 0 2px 8px rgba(245, 158, 11, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2.5rem;
+    }
+    h1 {
+      font-size: 1.4rem;
+      text-align: center;
+      margin-bottom: 0.1rem;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .row-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .pill-select {
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      color: var(--text-main);
+    }
+
+    .stats-card, .panel {
+      background: var(--card-bg);
+      border-radius: 1rem;
+      padding: 0.9rem 1rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 0.8rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    .stat-value {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .progress-bar-wrap {
+      margin-top: 0.6rem;
+    }
+    .progress-bg {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    body[data-theme="dark"] .progress-bg {
+      background: #111827;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #4ade80);
+      transition: width 0.25s ease-out;
+    }
+    .progress-text {
+      margin-top: 0.2rem;
+      font-size: 0.75rem;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.78rem;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+      background: var(--text-main);
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn.secondary {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+    .btn.danger {
+      background: #b91c1c;
+      color: #fee2e2;
+    }
+    .btn:active {
+      opacity: 0.85;
+      transform: translateY(0.5px);
+    }
+
+    .inline-input {
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.78rem;
+      width: 80px;
+      color: var(--text-main);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      gap: 0.3rem;
+    }
+    .cell {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 0.6rem;
+      padding: 0.35rem 0.25rem;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.16);
+      text-align: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, background 0.1s, border 0.1s;
+      border: 1px solid transparent;
+    }
+    .cell:active {
+      transform: scale(0.96);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+    }
+    .cell.done {
+      background: var(--accent-soft);
+      box-shadow: var(--shadow-strong);
+      border-color: var(--accent);
+    }
+    .cell.pop {
+      animation: pop 0.18s ease-out;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.9); }
+      60% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    .cell .day {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-bottom: 0.05rem;
+    }
+    .cell .amount {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .cell.done .amount {
+      text-decoration: line-through;
+    }
+    .cell.done::after {
+      content: "✓";
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .cell .note-dot {
+      position: absolute;
+      bottom: 4px;
+      right: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #f97316;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .small-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .milestones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+    }
+    .milestone-pill {
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+    .milestone-pill.done {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .achievements {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+    }
+    .achievement-pill {
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      border: 1px dashed var(--border-subtle);
+      color: var(--text-muted);
+    }
+    .achievement-pill.unlocked {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+
+    .rewards-list {
+      font-size: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .reward-item {
+      border-radius: 0.6rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .reward-item.unlocked {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+    .reward-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .reward-amount {
+      color: var(--text-muted);
+    }
+
+    .export-area {
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+      border-radius: 0.6rem;
+      border: 1px solid var(--border-subtle);
+      padding: 0.4rem 0.5rem;
+      font-size: 0.75rem;
+      background: var(--card-bg);
+      color: var(--text-main);
+      margin-top: 0.4rem;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 480px) {
+      .stats-row {
+        gap: 0.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>30K in 365 Days</h1>
+    <div class="subtitle">Tap a square when you save that amount 💸 • Long-press to add a note 📝</div>
+
+    <div class="row-flex">
+      <div>
+        <label for="themeSelect" class="small-text">Theme:</label>
+        <select id="themeSelect" class="pill-select">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="pink">Pink</option>
+          <option value="neutral">Neutral</option>
+        </select>
+      </div>
+      <div class="small-text">
+        Goal:
+        <input type="number" id="goalInput" class="inline-input" min="1000" step="100" />
+        Min:
+        <input type="number" id="minInput" class="inline-input" min="1" />
+        Max:
+        <input type="number" id="maxInput" class="inline-input" min="1" />
+        <button class="btn secondary" id="applyGoalBtn">Apply</button>
+      </div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-row">
+        <div>
+          <div class="stat-label">Total Saved</div>
+          <div class="stat-value" id="totalSaved">$0</div>
+        </div>
+        <div>
+          <div class="stat-label">Goal</div>
+          <div class="stat-value" id="goalLabel">$30,000</div>
+        </div>
+        <div>
+          <div class="stat-label">Progress</div>
+          <div class="stat-value"><span id="percent">0.0</span>%</div>
+        </div>
+        <div>
+          <div class="stat-label">Days Done</div>
+          <div class="stat-value"><span id="daysDone">0</span>/365</div>
+        </div>
+        <div>
+          <div class="stat-label">Streak</div>
+          <div class="stat-value"><span id="currentStreak">0</span> days (best <span id="longestStreak">0</span>)</div>
+        </div>
+        <div>
+          <div class="stat-label">Level</div>
+          <div class="stat-value">Lv <span id="level">1</span> · XP <span id="xp">0</span></div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bg">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progressText">0 / 30,000 saved</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <span class="small-text">Tap to toggle ✓ · Long-press to add a note</span>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
+          <button class="btn secondary" id="toggleDailyModeBtn">Daily Save: Off</button>
+          <button class="btn secondary" id="shuffleBtn">Shuffle Challenge</button>
+          <button class="btn danger" id="resetAllBtn">Reset All</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="small-text">
+          Bulk save:
+          <input type="number" id="bulkInput" class="inline-input" min="1" placeholder="1000" />
+          <button class="btn secondary" id="bulkApplyBtn">Apply</button>
+        </div>
+        <div class="small-text">
+          Daily Save Mode:
+          <button class="btn secondary" id="dailyPickBtn">Pick & Save a Random Day</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Milestones</div>
+      <div class="milestones" id="milestones"></div>
+      <div class="section-title" style="margin-top:0.5rem;">Achievements</div>
+      <div class="achievements" id="achievements"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Custom Rewards</div>
+      <div class="controls" style="margin-bottom:0.4rem;">
+        <input type="text" id="rewardLabelInput" class="inline-input" style="flex:1;min-width:120px;" placeholder="Reward (spa day, shoes, etc.)" />
+        <input type="number" id="rewardAmountInput" class="inline-input" min="1" placeholder="Amount" />
+        <button class="btn secondary" id="addRewardBtn">Add</button>
+      </div>
+      <div class="rewards-list" id="rewardsList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Export / Import</div>
+      <div class="controls">
+        <button class="btn secondary" id="exportBtn">Export Data</button>
+        <button class="btn secondary" id="importBtn">Import Data</button>
+        <span class="small-text">Copy/paste the JSON below to move progress between devices.</span>
+      </div>
+      <textarea id="exportArea" class="export-area" placeholder="Exported data will appear here..."></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Your 365-Day Grid</div>
+      <div class="small-text" style="margin-bottom:0.4rem;">
+        Tip: scroll, tap to mark saved. Long-press a square to attach a note like how you saved that day.
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="footer">
+      All data is stored locally on this device (no account needed). Add this page to your home screen to use it like an app.
+    </div>
+  </div>
+
+  <script>
+    // --- Keys & defaults ---
+    const AMOUNTS_KEY = "savings_30k_365_amounts_v2";
+    const DONE_KEY = "savings_30k_365_done_v2";
+    const SETTINGS_KEY = "savings_30k_365_settings_v2";
+    const STREAK_KEY = "savings_30k_365_streak_v2";
+    const NOTES_KEY = "savings_30k_365_notes_v2";
+    const REWARDS_KEY = "savings_30k_365_rewards_v2";
+    const EXPORT_VERSION = "v2";
+    const DAYS = 365;
+
+    const defaultSettings = {
+      goal: 30000,
+      min: 20,
+      max: 150,
+      theme: "light",
+      dailyMode: false,
+    };
+
+    // --- Helpers ---
+    function formatMoney(n) {
+      return "$" + n.toLocaleString();
+    }
+    function todayISO() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    // --- Settings / Theme ---
+    function loadSettings() {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (!stored) return { ...defaultSettings };
+      try {
+        const obj = JSON.parse(stored);
+        return { ...defaultSettings, ...obj };
+      } catch {
+        return { ...defaultSettings };
+      }
+    }
+    function saveSettings(settings) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    let settings = loadSettings();
+    document.body.setAttribute("data-theme", settings.theme || "light");
+
+    // --- Amount generation ---
+    function generateAmounts(goal, min, max) {
+      const arr = [];
+      for (let i = 0; i < DAYS; i++) {
+        const val = Math.floor(Math.random() * (max - min + 1)) + min;
+        arr.push(val);
+      }
+      let sum = arr.reduce((a, b) => a + b, 0);
+      let diff = goal - sum;
+      let safety = 0;
+      while (diff !== 0 && safety < 300000) {
+        const i = Math.floor(Math.random() * DAYS);
+        if (diff > 0) {
+          if (arr[i] < max) {
+            arr[i] += 1;
+            diff -= 1;
+          }
+        } else {
+          if (arr[i] > min) {
+            arr[i] -= 1;
+            diff += 1;
+          }
+        }
+        safety++;
+      }
+      return arr;
+    }
+
+    function loadAmounts() {
+      const stored = localStorage.getItem(AMOUNTS_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length === DAYS) return parsed;
+        } catch {}
+      }
+      const fresh = generateAmounts(settings.goal, settings.min, settings.max);
+      localStorage.setItem(AMOUNTS_KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+    function saveAmounts(amounts) {
+      localStorage.setItem(AMOUNTS_KEY, JSON.stringify(amounts));
+    }
+
+    // --- Done set ---
+    function loadDoneSet() {
+      const stored = localStorage.getItem(DONE_KEY);
+      if (!stored) return new Set();
+      try {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr)) return new Set(arr);
+      } catch {}
+      return new Set();
+    }
+    function saveDoneSet(doneSet) {
+      localStorage.setItem(DONE_KEY, JSON.stringify(Array.from(doneSet)));
+    }
+
+    // --- Notes ---
+    function loadNotes() {
+      const stored = localStorage.getItem(NOTES_KEY);
+      if (!stored) return {};
+      try {
+        const obj = JSON.parse(stored);
+        return obj && typeof obj === "object" ? obj : {};
+      } catch {
+        return {};
+      }
+    }
+    function saveNotes(notes) {
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    }
+
+    // --- Rewards ---
+    function loadRewards() {
+      const stored = localStorage.getItem(REWARDS_KEY);
+      if (!stored) return [];
+      try {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr)) return arr;
+      } catch {}
+      return [];
+    }
+    function saveRewards(rewards) {
+      localStorage.setItem(REWARDS_KEY, JSON.stringify(rewards));
+    }
+
+    // --- Streaks ---
+    function loadStreak() {
+      const stored = localStorage.getItem(STREAK_KEY);
+      if (!stored) {
+        return { lastSaveDate: null, current: 0, longest: 0 };
+      }
+      try {
+        const obj = JSON.parse(stored);
+        return {
+          lastSaveDate: obj.lastSaveDate || null,
+          current: obj.current || 0,
+          longest: obj.longest || 0,
+        };
+      } catch {
+        return { lastSaveDate: null, current: 0, longest: 0 };
+      }
+    }
+    function saveStreak(streak) {
+      localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
+    }
+    function registerSaveEvent() {
+      const today = todayISO();
+      const streak = loadStreak();
+      if (streak.lastSaveDate === today) {
+        return; // already counted today
+      }
+      if (streak.lastSaveDate) {
+        const prev = new Date(streak.lastSaveDate);
+        const curr = new Date(today);
+        const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          streak.current += 1;
+        } else {
+          streak.current = 1;
+        }
+      } else {
+        streak.current = 1;
+      }
+      streak.lastSaveDate = today;
+      streak.longest = Math.max(streak.longest, streak.current);
+      saveStreak(streak);
+    }
+
+    // --- State ---
+    let amounts = loadAmounts();
+    let doneSet = loadDoneSet();
+    let notes = loadNotes();
+    let rewards = loadRewards();
+
+    // --- DOM refs ---
+    const themeSelect = document.getElementById("themeSelect");
+    const goalInput = document.getElementById("goalInput");
+    const minInput = document.getElementById("minInput");
+    const maxInput = document.getElementById("maxInput");
+    const applyGoalBtn = document.getElementById("applyGoalBtn");
+
+    const totalSavedEl = document.getElementById("totalSaved");
+    const goalLabelEl = document.getElementById("goalLabel");
+    const percentEl = document.getElementById("percent");
+    const daysDoneEl = document.getElementById("daysDone");
+    const progressFillEl = document.getElementById("progressFill");
+    const progressTextEl = document.getElementById("progressText");
+    const currentStreakEl = document.getElementById("currentStreak");
+    const longestStreakEl = document.getElementById("longestStreak");
+    const levelEl = document.getElementById("level");
+    const xpEl = document.getElementById("xp");
+
+    const toggleDailyModeBtn = document.getElementById("toggleDailyModeBtn");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const resetAllBtn = document.getElementById("resetAllBtn");
+    const bulkInput = document.getElementById("bulkInput");
+    const bulkApplyBtn = document.getElementById("bulkApplyBtn");
+    const dailyPickBtn = document.getElementById("dailyPickBtn");
+
+    const milestonesEl = document.getElementById("milestones");
+    const achievementsEl = document.getElementById("achievements");
+
+    const rewardLabelInput = document.getElementById("rewardLabelInput");
+    const rewardAmountInput = document.getElementById("rewardAmountInput");
+    const addRewardBtn = document.getElementById("addRewardBtn");
+    const rewardsListEl = document.getElementById("rewardsList");
+
+    const exportBtn = document.getElementById("exportBtn");
+    const importBtn = document.getElementById("importBtn");
+    const exportArea = document.getElementById("exportArea");
+
+    const gridEl = document.getElementById("grid");
+
+    // Initialize UI inputs with settings
+    themeSelect.value = settings.theme;
+    goalInput.value = settings.goal;
+    minInput.value = settings.min;
+    maxInput.value = settings.max;
+    toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+
+    // --- Render functions ---
+    function computeStats() {
+      let totalSaved = 0;
+      let daysDone = 0;
+      doneSet.forEach((idx) => {
+        if (idx >= 0 && idx < amounts.length) {
+          totalSaved += amounts[idx];
+          daysDone += 1;
+        }
+      });
+      return { totalSaved, daysDone };
+    }
+
+    function computeLevelXP(totalSaved) {
+      const xp = Math.floor(totalSaved / 10); // simple: $10 = 1 XP
+      const level = Math.max(1, Math.floor(xp / 100) + 1);
+      return { level, xp };
+    }
+
+    function renderStatsAndMeta() {
+      const { totalSaved, daysDone } = computeStats();
+      const goal = settings.goal;
+      const percent = goal > 0 ? (totalSaved / goal) * 100 : 0;
+
+      totalSavedEl.textContent = formatMoney(totalSaved);
+      goalLabelEl.textContent = formatMoney(goal);
+      percentEl.textContent = percent.toFixed(1);
+      daysDoneEl.textContent = `${daysDone}/${DAYS}`;
+      progressFillEl.style.width = Math.min(percent, 100).toFixed(1) + "%";
+      progressTextEl.textContent = `${totalSaved.toLocaleString()} / ${goal.toLocaleString()} saved`;
+
+      const streak = loadStreak();
+      currentStreakEl.textContent = streak.current;
+      longestStreakEl.textContent = streak.longest;
+
+      const { level, xp } = computeLevelXP(totalSaved);
+      levelEl.textContent = level;
+      xpEl.textContent = xp;
+
+      renderMilestones(totalSaved);
+      renderAchievements(totalSaved, daysDone, streak);
+      renderRewards(totalSaved);
+    }
+
+    function renderMilestones(totalSaved) {
+      const goal = settings.goal;
+      const checkpoints = [
+        { label: "10%", pct: 0.1 },
+        { label: "25%", pct: 0.25 },
+        { label: "50%", pct: 0.5 },
+        { label: "75%", pct: 0.75 },
+        { label: "100%", pct: 1.0 },
+      ];
+      milestonesEl.innerHTML = "";
+      checkpoints.forEach((m) => {
+        const threshold = goal * m.pct;
+        const done = totalSaved >= threshold - 0.0001;
+        const div = document.createElement("div");
+        div.className = "milestone-pill" + (done ? " done" : "");
+        const emoji = done ? "🎉" : "🔒";
+        div.textContent = `${emoji} ${m.label} (${formatMoney(Math.round(threshold))})`;
+        milestonesEl.appendChild(div);
+      });
+    }
+
+    function renderAchievements(totalSaved, daysDone, streak) {
+      const achievements = [
+        {
+          id: "first_save",
+          label: "First Save",
+          check: () => totalSaved > 0,
+        },
+        {
+          id: "1k_club",
+          label: "$1,000 Club",
+          check: () => totalSaved >= 1000,
+        },
+        {
+          id: "5k_club",
+          label: "$5,000 Club",
+          check: () => totalSaved >= 5000,
+        },
+        {
+          id: "10k_club",
+          label: "$10,000 Club",
+          check: () => totalSaved >= 10000,
+        },
+        {
+          id: "halfway",
+          label: "Halfway Hero (50%)",
+          check: () => totalSaved >= settings.goal * 0.5,
+        },
+        {
+          id: "streak_7",
+          label: "7-Day Streak",
+          check: () => streak.longest >= 7,
+        },
+        {
+          id: "streak_30",
+          label: "30-Day Streak",
+          check: () => streak.longest >= 30,
+        },
+        {
+          id: "30_days_done",
+          label: "30 Days Completed",
+          check: () => daysDone >= 30,
+        },
+        {
+          id: "all_done",
+          label: "365-Day Finisher",
+          check: () => daysDone >= DAYS,
+        },
+      ];
+
+      achievementsEl.innerHTML = "";
+      achievements.forEach((a) => {
+        const unlocked = a.check();
+        const span = document.createElement("div");
+        span.className = "achievement-pill" + (unlocked ? " unlocked" : "");
+        span.textContent = (unlocked ? "🏅 " : "🔒 ") + a.label;
+        achievementsEl.appendChild(span);
+      });
+    }
+
+    function renderRewards(totalSaved) {
+      rewardsListEl.innerHTML = "";
+      if (!rewards.length) {
+        const span = document.createElement("div");
+        span.className = "small-text";
+        span.textContent = "Add rewards (like 'Spa day at $5k') and they'll unlock automatically.";
+        rewardsListEl.appendChild(span);
+        return;
+      }
+      rewards.forEach((r, idx) => {
+        const unlocked = totalSaved >= r.amount;
+        const row = document.createElement("div");
+        row.className = "reward-item" + (unlocked ? " unlocked" : "");
+        const left = document.createElement("div");
+        left.className = "reward-label";
+        left.textContent = r.label;
+        const middle = document.createElement("div");
+        middle.className = "reward-amount";
+        middle.textContent = formatMoney(r.amount);
+        const remove = document.createElement("button");
+        remove.className = "btn secondary";
+        remove.textContent = "✕";
+        remove.style.fontSize = "0.7rem";
+        remove.addEventListener("click", () => {
+          rewards.splice(idx, 1);
+          saveRewards(rewards);
+          renderStatsAndMeta();
+        });
+        row.appendChild(left);
+        row.appendChild(middle);
+        row.appendChild(remove);
+        rewardsListEl.appendChild(row);
+      });
+    }
+
+    function renderGrid() {
+      gridEl.innerHTML = "";
+      const frag = document.createDocumentFragment();
+
+      amounts.forEach((amt, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = "cell-" + idx;
+        if (doneSet.has(idx)) cell.classList.add("done");
+        if (notes[idx]) {
+          const dot = document.createElement("div");
+          dot.className = "note-dot";
+          cell.appendChild(dot);
+        }
+        const daySpan = document.createElement("span");
+        daySpan.className = "day";
+        daySpan.textContent = "Day " + (idx + 1);
+        const amtSpan = document.createElement("span");
+        amtSpan.className = "amount";
+        amtSpan.textContent = "$" + amt;
+
+        cell.appendChild(daySpan);
+        cell.appendChild(amtSpan);
+
+        // Long-press detection for notes
+        let longPressTimer = null;
+        let longPressTriggered = false;
+        const longPressDuration = 550;
+
+        const startPress = (e) => {
+          longPressTriggered = false;
+          if (longPressTimer) clearTimeout(longPressTimer);
+          longPressTimer = setTimeout(() => {
+            longPressTriggered = true;
+            showNotePrompt(idx);
+          }, longPressDuration);
+        };
+        const endPress = (e) => {
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+        };
+
+        cell.addEventListener("mousedown", startPress);
+        cell.addEventListener("touchstart", startPress);
+        cell.addEventListener("mouseup", endPress);
+        cell.addEventListener("mouseleave", endPress);
+        cell.addEventListener("touchend", endPress);
+        cell.addEventListener("touchcancel", endPress);
+
+        cell.addEventListener("click", () => {
+          if (longPressTriggered) {
+            // already handled by note prompt
+            return;
+          }
+          const wasDone = doneSet.has(idx);
+          if (wasDone) {
+            doneSet.delete(idx);
+          } else {
+            doneSet.add(idx);
+            registerSaveEvent();
+            cell.classList.add("pop");
+            setTimeout(() => cell.classList.remove("pop"), 200);
+          }
+          saveDoneSet(doneSet);
+          renderStatsAndMeta();
+          // Update only this cell state quickly
+          if (doneSet.has(idx)) {
+            cell.classList.add("done");
+          } else {
+            cell.classList.remove("done");
+          }
+        });
+
+        frag.appendChild(cell);
+      });
+
+      gridEl.appendChild(frag);
+    }
+
+    function showNotePrompt(idx) {
+      const existing = notes[idx] || "";
+      const dayLabel = "Day " + (idx + 1);
+      const text = prompt(`Add or edit a note for ${dayLabel} (leave empty to remove):`, existing);
+      if (text === null) return;
+      const trimmed = text.trim();
+      if (!trimmed) {
+        delete notes[idx];
+      } else {
+        notes[idx] = trimmed;
+      }
+      saveNotes(notes);
+      renderGrid();
+      renderStatsAndMeta();
+    }
+
+    function renderAll() {
+      renderGrid();
+      renderStatsAndMeta();
+    }
+
+    // --- Daily save picker ---
+    function pickRandomDay() {
+      const remaining = [];
+      for (let i = 0; i < amounts.length; i++) {
+        if (!doneSet.has(i)) remaining.push(i);
+      }
+      if (!remaining.length) {
+        alert("All days are already completed. 🎉");
+        return null;
+      }
+      const idx = remaining[Math.floor(Math.random() * remaining.length)];
+      return idx;
+    }
+
+    function pickAndSaveRandomDay() {
+      const idx = pickRandomDay();
+      if (idx === null) return;
+      if (!doneSet.has(idx)) {
+        doneSet.add(idx);
+        saveDoneSet(doneSet);
+        registerSaveEvent();
+      }
+      renderAll();
+      const cell = document.getElementById("cell-" + idx);
+      if (cell) {
+        cell.scrollIntoView({ behavior: "smooth", block: "center" });
+        cell.classList.add("pop");
+        setTimeout(() => cell.classList.remove("pop"), 220);
+      }
+    }
+
+    // --- Bulk saver ---
+    function applyBulkSave() {
+      const val = Number(bulkInput.value);
+      if (!val || val <= 0) {
+        alert("Enter a positive bulk amount (e.g. 1000).");
+        return;
+      }
+      let remaining = [];
+      for (let i = 0; i < amounts.length; i++) {
+        if (!doneSet.has(i)) remaining.push({ idx: i, amt: amounts[i] });
+      }
+      if (!remaining.length) {
+        alert("All days are already completed. 🎉");
+        return;
+      }
+      // Greedy: check off largest amounts first to make future days easier
+      remaining.sort((a, b) => b.amt - a.amt);
+      let budget = val;
+      const touched = [];
+      for (const item of remaining) {
+        if (item.amt <= budget) {
+          budget -= item.amt;
+          doneSet.add(item.idx);
+          touched.push(item.idx);
+          if (budget <= 0) break;
+        }
+      }
+      if (!touched.length) {
+        alert("Bulk amount is smaller than the smallest remaining day.");
+        return;
+      }
+      saveDoneSet(doneSet);
+      registerSaveEvent();
+      renderAll();
+      // Scroll to the first one we changed
+      const firstIdx = touched[0];
+      const cell = document.getElementById("cell-" + firstIdx);
+      if (cell) {
+        cell.scrollIntoView({ behavior: "smooth", block: "center" });
+        cell.classList.add("pop");
+        setTimeout(() => cell.classList.remove("pop"), 220);
+      }
+    }
+
+    // --- Export / Import ---
+    function buildExportData() {
+      const streak = loadStreak();
+      return {
+        version: EXPORT_VERSION,
+        settings,
+        amounts,
+        done: Array.from(doneSet),
+        notes,
+        rewards,
+        streak,
+      };
+    }
+    function applyImportData(raw) {
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        alert("Invalid JSON.");
+        return;
+      }
+      if (!data || data.version !== EXPORT_VERSION) {
+        if (!confirm("Version mismatch or missing version. Try importing anyway?")) {
+          return;
+        }
+      }
+      if (!Array.isArray(data.amounts) || data.amounts.length !== DAYS) {
+        alert("Invalid or missing amounts array.");
+        return;
+      }
+      amounts = data.amounts.map((n) => Number(n) || 0);
+      saveAmounts(amounts);
+
+      if (data.settings) {
+        settings = { ...defaultSettings, ...data.settings };
+        saveSettings(settings);
+        document.body.setAttribute("data-theme", settings.theme || "light");
+      }
+
+      if (Array.isArray(data.done)) {
+        doneSet = new Set(data.done);
+        saveDoneSet(doneSet);
+      } else {
+        doneSet = new Set();
+        saveDoneSet(doneSet);
+      }
+
+      notes = data.notes && typeof data.notes === "object" ? data.notes : {};
+      saveNotes(notes);
+
+      rewards = Array.isArray(data.rewards) ? data.rewards : [];
+      saveRewards(rewards);
+
+      if (data.streak && typeof data.streak === "object") {
+        saveStreak({
+          lastSaveDate: data.streak.lastSaveDate || null,
+          current: data.streak.current || 0,
+          longest: data.streak.longest || 0,
+        });
+      }
+
+      // refresh UI inputs
+      themeSelect.value = settings.theme;
+      goalInput.value = settings.goal;
+      minInput.value = settings.min;
+      maxInput.value = settings.max;
+      toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+
+      renderAll();
+      alert("Import successful!");
+    }
+
+    // --- Event listeners ---
+    themeSelect.addEventListener("change", () => {
+      settings.theme = themeSelect.value;
+      saveSettings(settings);
+      document.body.setAttribute("data-theme", settings.theme);
+    });
+
+    applyGoalBtn.addEventListener("click", () => {
+      const goalVal = Number(goalInput.value) || defaultSettings.goal;
+      const minVal = Number(minInput.value) || defaultSettings.min;
+      const maxVal = Number(maxInput.value) || defaultSettings.max;
+      if (minVal <= 0 || maxVal <= 0 || goalVal <= 0) {
+        alert("Goal and min/max must be positive.");
+        return;
+      }
+      if (minVal > maxVal) {
+        alert("Min cannot be greater than max.");
+        return;
+      }
+      if (!confirm("Apply new goal/min/max? This will regenerate the challenge and reset progress.")) {
+        return;
+      }
+      settings.goal = goalVal;
+      settings.min = minVal;
+      settings.max = maxVal;
+      saveSettings(settings);
+      doneSet = new Set();
+      notes = {};
+      saveDoneSet(doneSet);
+      saveNotes(notes);
+      saveStreak({ lastSaveDate: null, current: 0, longest: 0 });
+      amounts = generateAmounts(settings.goal, settings.min, settings.max);
+      saveAmounts(amounts);
+      renderAll();
+    });
+
+    toggleDailyModeBtn.addEventListener("click", () => {
+      settings.dailyMode = !settings.dailyMode;
+      saveSettings(settings);
+      toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+    });
+
+    dailyPickBtn.addEventListener("click", () => {
+      if (!settings.dailyMode) {
+        if (!confirm("Daily Save Mode is off. Turn it on and pick a random day?")) {
+          return;
+        }
+        settings.dailyMode = true;
+        saveSettings(settings);
+        toggleDailyModeBtn.textContent = "Daily Save: On";
+      }
+      pickAndSaveRandomDay();
+    });
+
+    shuffleBtn.addEventListener("click", () => {
+      if (!confirm("Shuffle/regenerate the challenge? This will reset progress, notes, and streaks.")) {
+        return;
+      }
+      doneSet = new Set();
+      notes = {};
+      saveDoneSet(doneSet);
+      saveNotes(notes);
+      saveStreak({ lastSaveDate: null, current: 0, longest: 0 });
+      amounts = generateAmounts(settings.goal, settings.min, settings.max);
+      saveAmounts(amounts);
+      renderAll();
+    });
+
+    resetAllBtn.addEventListener("click", () => {
+      if (!confirm("Reset EVERYTHING? This will clear progress, notes, rewards, streaks and generate a fresh challenge.")) {
+        return;
+      }
+      localStorage.removeItem(AMOUNTS_KEY);
+      localStorage.removeItem(DONE_KEY);
+      localStorage.removeItem(NOTES_KEY);
+      localStorage.removeItem(STREAK_KEY);
+      localStorage.removeItem(REWARDS_KEY);
+      // keep settings but reset daily mode
+      settings.dailyMode = false;
+      saveSettings(settings);
+
+      amounts = loadAmounts();
+      doneSet = new Set();
+      notes = {};
+      rewards = [];
+      saveRewards(rewards);
+      toggleDailyModeBtn.textContent = "Daily Save: Off";
+      renderAll();
+    });
+
+    bulkApplyBtn.addEventListener("click", applyBulkSave);
+
+    addRewardBtn.addEventListener("click", () => {
+      const label = (rewardLabelInput.value || "").trim();
+      const amt = Number(rewardAmountInput.value);
+      if (!label || !amt || amt <= 0) {
+        alert("Enter a label and a positive amount.");
+        return;
+      }
+      rewards.push({ label, amount: amt });
+      saveRewards(rewards);
+      rewardLabelInput.value = "";
+      rewardAmountInput.value = "";
+      renderStatsAndMeta();
+    });
+
+    exportBtn.addEventListener("click", () => {
+      const data = buildExportData();
+      const json = JSON.stringify(data);
+      exportArea.value = json;
+      exportArea.focus();
+      exportArea.select();
+    });
+
+    importBtn.addEventListener("click", () => {
+      const raw = exportArea.value.trim();
+      if (!raw) {
+        alert("Paste exported JSON into the text area first.");
+        return;
+      }
+      if (!confirm("Importing will overwrite your current progress. Continue?")) {
+        return;
+      }
+      applyImportData(raw);
+    });
+
+    // --- Initial render ---
+    renderAll();
+  </script>
+</body>
+</html>

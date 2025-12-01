@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>30K in 365 Days Challenge</title>
+  <title>Cash Quest – Savings Challenge Grid</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
@@ -82,10 +82,25 @@
     .title-wrap {
       display: flex;
       flex-direction: column;
+      gap: 0.1rem;
     }
-    h1 {
-      font-size: 1.3rem;
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .app-title-main {
+      font-size: 1.5rem;
       margin: 0;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      background: linear-gradient(90deg, #22c55e, #4ade80, #22c55e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .app-title-emoji {
+      font-size: 1.3rem;
     }
     .subtitle {
       font-size: 0.85rem;
@@ -506,8 +521,13 @@
   <div class="app">
     <header class="header">
       <div class="title-wrap">
-        <h1>30K in 365 Days</h1>
-        <div class="subtitle">Tap a square when you save it · long-press to add a note</div>
+        <div class="app-title">
+          <h1 class="app-title-main">Cash Quest</h1>
+          <span class="app-title-emoji">💸✨</span>
+        </div>
+        <div class="subtitle">
+          Turn your savings goal into a tap-to-complete grid. Any amount, any timeline.
+        </div>
       </div>
       <button class="btn secondary menu-btn" id="openMenuBtn">
         ☰ Menu
@@ -517,7 +537,7 @@
     <main class="main-content">
       <div class="grid-panel">
         <div class="grid-title-row">
-          <div class="grid-title">Your challenge grid</div>
+          <div class="grid-title">Your savings challenge grid</div>
           <div class="recommendation-chip" id="recommendationChip">
             Loading recommendation…
           </div>
@@ -585,7 +605,7 @@
               <div class="stat-value"><span id="percent">0.0</span>%</div>
             </div>
             <div>
-              <div class="stat-label">Days Done</div>
+              <div class="stat-label">Squares Done</div>
               <div class="stat-value"><span id="daysDone">0</span>/365</div>
             </div>
             <div>
@@ -624,7 +644,7 @@
               Daily Save Mode:
               <button class="btn secondary" id="toggleDailyModeBtn">Daily Save: Off</button>
             </div>
-            <button class="btn secondary" id="dailyPickBtn">Pick & Save Random Day</button>
+            <button class="btn secondary" id="dailyPickBtn">Pick & Save Random Square</button>
           </div>
           <div class="row-flex">
             <button class="btn secondary" id="shuffleBtn">Shuffle Challenge</button>
@@ -961,38 +981,33 @@
         };
       }
 
-      const behind = diff < -goal * 0.02; // more than ~2% behind
+      const behind = diff < -goal * 0.02;
       const ahead = diff > goal * 0.02;
 
       if (behind) {
         statusLabel = "Behind a bit";
-        statusDetail = `You’re about ${formatMoney(Math.round(Math.abs(diff)))} behind where you’d be on a perfectly even pace for day ${challengeDay}.`;
+        statusDetail = `You’re about ${formatMoney(Math.round(Math.abs(diff)))} behind a steady pace for today.`;
       } else if (ahead) {
         statusLabel = "Ahead of schedule";
-        statusDetail = `You’re ahead by about ${formatMoney(Math.round(diff))} compared to an even pace for day ${challengeDay}.`;
+        statusDetail = `You’re ahead by about ${formatMoney(Math.round(diff))} compared to a steady pace.`;
       } else {
         statusLabel = "On track";
-        statusDetail = `You’re roughly on pace for day ${challengeDay}.`;
+        statusDetail = `You’re roughly on pace for where you planned to be.`;
       }
 
-      // Pick recommended square
       let recommendedIdx = null;
       let recommendedAmount = null;
 
-      // sort by amount
       const sorted = remaining.slice().sort((a, b) => a.amt - b.amt);
       if (behind) {
-        // pick one of the largest squares to catch up
         const choice = sorted[sorted.length - 1];
         recommendedIdx = choice.idx;
         recommendedAmount = choice.amt;
       } else if (ahead) {
-        // pick one of the smallest squares to give yourself an easier day
         const choice = sorted[0];
         recommendedIdx = choice.idx;
         recommendedAmount = choice.amt;
       } else {
-        // pick around the middle (median-ish)
         const mid = Math.floor(sorted.length / 2);
         const choice = sorted[mid];
         recommendedIdx = choice.idx;
@@ -1011,7 +1026,7 @@
         paceLine = `You’re at or past your planned timeline. Anything extra is a bonus.`;
       }
 
-      const summary = `${statusLabel}: ${statusDetail} ${paceLine} Recommended square for today: Day ${recommendedIdx + 1} for ${formatMoney(recommendedAmount)}.`;
+      const summary = `${statusLabel}: ${statusDetail} ${paceLine} Recommended square for today: square ${recommendedIdx + 1} for ${formatMoney(recommendedAmount)}.`;
 
       return {
         statusLabel,
@@ -1083,12 +1098,12 @@
         },
         {
           id: "30_days_done",
-          label: "30 Days Completed",
+          label: "30 Squares Completed",
           check: () => daysDone >= 30,
         },
         {
           id: "all_done",
-          label: "365-Day Finisher",
+          label: "Grid Finisher",
           check: () => daysDone >= DAYS,
         },
       ];
@@ -1186,7 +1201,7 @@
         }
         const daySpan = document.createElement("span");
         daySpan.className = "day";
-        daySpan.textContent = "Day " + (idx + 1);
+        daySpan.textContent = "Square " + (idx + 1);
         const amtSpan = document.createElement("span");
         amtSpan.className = "amount";
         amtSpan.textContent = "$" + amt;
@@ -1248,7 +1263,7 @@
 
     function showNotePrompt(idx) {
       const existing = notes[idx] || "";
-      const dayLabel = "Day " + (idx + 1);
+      const dayLabel = "Square " + (idx + 1);
       const text = prompt(`Add or edit a note for ${dayLabel} (leave empty to remove):`, existing);
       if (text === null) return;
       const trimmed = text.trim();
@@ -1273,7 +1288,7 @@
         if (!doneSet.has(i)) remaining.push(i);
       }
       if (!remaining.length) {
-        alert("All days are already completed. 🎉");
+        alert("All squares are already completed. 🎉");
         return null;
       }
       const idx = remaining[Math.floor(Math.random() * remaining.length)];
@@ -1329,7 +1344,7 @@
         if (!doneSet.has(i)) remaining.push({ idx: i, amt: amounts[i] });
       }
       if (!remaining.length) {
-        alert("All days are already completed. 🎉");
+        alert("All squares are already completed. 🎉");
         return;
       }
       remaining.sort((a, b) => b.amt - a.amt);
@@ -1344,7 +1359,7 @@
         }
       }
       if (!touched.length) {
-        alert("Bulk amount is smaller than the smallest remaining day.");
+        alert("Bulk amount is smaller than the smallest remaining square.");
         return;
       }
       saveDoneSet(doneSet);
@@ -1505,7 +1520,7 @@
 
     dailyPickBtn.addEventListener("click", () => {
       if (!settings.dailyMode) {
-        if (!confirm("Daily Save Mode is off. Turn it on and pick a random day?")) {
+        if (!confirm("Daily Save Mode is off. Turn it on and pick a random square?")) {
           return;
         }
         settings.dailyMode = true;

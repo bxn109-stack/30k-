@@ -132,13 +132,6 @@
       transform: translateY(0.5px);
     }
 
-    .btn.oauth {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.78rem;
-    }
-
     .menu-btn {
       display: inline-flex;
       align-items: center;
@@ -315,7 +308,6 @@
       color: var(--text-muted);
     }
 
-    /* Menu overlay / sheet */
     .menu-overlay {
       position: fixed;
       inset: 0;
@@ -556,7 +548,6 @@
       </div>
     </main>
 
-    <!-- Bottom bulk-save bar -->
     <div class="bottom-bar">
       <div class="bottom-inner">
         <div class="bottom-label">
@@ -568,7 +559,6 @@
       </div>
     </div>
 
-    <!-- Slide-up Menu / Settings / Actions -->
     <div class="menu-overlay" id="menuOverlay">
       <div class="menu-panel">
         <div class="menu-header">
@@ -647,10 +637,9 @@
         <div class="panel">
           <div class="section-title">Account & Cloud Sync</div>
           <div class="small-text" style="margin-bottom:0.35rem;">
-            Log in with your email or social account to back up your Cash Quest data to Supabase and restore it on any device.
+            Log in with your email to back up your Cash Quest data to Supabase and restore it on any device.
           </div>
 
-          <!-- Email login -->
           <div class="row-flex" style="align-items:flex-end;">
             <input
               type="email"
@@ -661,18 +650,6 @@
             />
             <button class="btn secondary" id="sendMagicLinkBtn">Send login link</button>
             <button class="btn secondary" id="signOutBtn" style="display:none;">Sign out</button>
-          </div>
-
-          <!-- OAuth buttons -->
-          <div class="row-flex" style="margin-top:0.45rem;flex-wrap:wrap;">
-            <button class="btn secondary oauth" id="googleLoginBtn">
-              <span>🔵</span>
-              <span>Continue with Google</span>
-            </button>
-            <button class="btn secondary oauth" id="appleLoginBtn">
-              <span></span>
-              <span>Continue with Apple</span>
-            </button>
           </div>
 
           <div class="small-text" id="authStatus" style="margin-top:0.3rem;">
@@ -745,7 +722,6 @@
 
   <!-- Cash Quest app logic -->
   <script>
-    // --- Keys & defaults ---
     const AMOUNTS_KEY = "savings_30k_365_amounts_v2";
     const DONE_KEY = "savings_30k_365_done_v2";
     const SETTINGS_KEY = "savings_30k_365_settings_v2";
@@ -929,7 +905,6 @@
     let notes = loadNotes();
     let rewards = loadRewards();
 
-    // DOM refs
     const gridEl = document.getElementById("grid");
     const recommendationChipEl = document.getElementById("recommendationChip");
     const bulkInput = document.getElementById("bulkInput");
@@ -977,7 +952,6 @@
     const recommendationSummaryEl = document.getElementById("recommendationSummary");
     const applyRecommendationBtn = document.getElementById("applyRecommendationBtn");
 
-    // Auth & cloud sync DOM
     const emailInput = document.getElementById("emailInput");
     const sendMagicLinkBtn = document.getElementById("sendMagicLinkBtn");
     const signOutBtn = document.getElementById("signOutBtn");
@@ -985,8 +959,6 @@
     const saveCloudBtn = document.getElementById("saveCloudBtn");
     const loadCloudBtn = document.getElementById("loadCloudBtn");
     const cloudStatusEl = document.getElementById("cloudStatus");
-    const googleLoginBtn = document.getElementById("googleLoginBtn");
-    const appleLoginBtn = document.getElementById("appleLoginBtn");
 
     themeSelect.value = settings.theme;
     goalInput.value = settings.goal;
@@ -1481,7 +1453,6 @@
       alert("Import successful!");
     }
 
-    // ----- Supabase Auth + Cloud sync -----
     function setAuthStatus(msg) {
       if (authStatusEl) authStatusEl.textContent = msg;
     }
@@ -1494,7 +1465,7 @@
     function updateAuthUI() {
       if (!authStatusEl || !signOutBtn) return;
       if (!currentUser) {
-        setAuthStatus("Not signed in. Use email, Google, or Apple to log in.");
+        setAuthStatus("Not signed in. Use your email to log in.");
         signOutBtn.style.display = "none";
       } else {
         setAuthStatus(`Signed in as ${currentUser.email || "your account"}.`);
@@ -1522,7 +1493,7 @@
       const { error } = await supabaseClient.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.href
+          emailRedirectTo: "https://bxn109-stack.github.io/30k-/"
         }
       });
       if (error) {
@@ -1530,7 +1501,7 @@
         setAuthStatus("Error sending magic link. Check console.");
         return;
       }
-      setAuthStatus("Magic link sent. Check your email and open the link on this device.");
+      setAuthStatus("Magic link sent. Check your email and open the link from this device.");
     }
 
     async function signOut() {
@@ -1538,21 +1509,6 @@
       currentUser = null;
       updateAuthUI();
       setCloudStatus("Signed out.");
-    }
-
-    async function signInWithProvider(provider) {
-      setAuthStatus(`Redirecting to ${provider}…`);
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: window.location.href
-        }
-      });
-      if (error) {
-        console.error(error);
-        setAuthStatus(`Error starting ${provider} login.`);
-      }
-      // User will be redirected; when they return, refreshAuth() will pick up session.
     }
 
     async function saveToCloud() {
@@ -1614,7 +1570,6 @@
       }
     }
 
-    // Menu toggle
     function openMenu() {
       menuOverlay.classList.add("open");
     }
@@ -1627,7 +1582,6 @@
       if (e.target === menuOverlay) closeMenu();
     });
 
-    // Events
     bulkApplyBtn.addEventListener("click", applyBulkSave);
 
     quickDailyBtn.addEventListener("click", () => {
@@ -1771,7 +1725,6 @@
       applyImportData(raw);
     });
 
-    // Auth + cloud event listeners
     if (sendMagicLinkBtn) {
       sendMagicLinkBtn.addEventListener("click", () => {
         sendMagicLink();
@@ -1792,18 +1745,7 @@
         loadFromCloud();
       });
     }
-    if (googleLoginBtn) {
-      googleLoginBtn.addEventListener("click", () => {
-        signInWithProvider("google");
-      });
-    }
-    if (appleLoginBtn) {
-      appleLoginBtn.addEventListener("click", () => {
-        signInWithProvider("apple");
-      });
-    }
 
-    // Initial render + auth refresh
     renderAll();
     refreshAuth();
   </script>

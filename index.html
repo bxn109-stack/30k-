@@ -132,6 +132,13 @@
       transform: translateY(0.5px);
     }
 
+    .btn.oauth {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+    }
+
     .menu-btn {
       display: inline-flex;
       align-items: center;
@@ -640,8 +647,10 @@
         <div class="panel">
           <div class="section-title">Account & Cloud Sync</div>
           <div class="small-text" style="margin-bottom:0.35rem;">
-            Log in with your email to back up your Cash Quest data to Supabase and restore it on any device.
+            Log in with your email or social account to back up your Cash Quest data to Supabase and restore it on any device.
           </div>
+
+          <!-- Email login -->
           <div class="row-flex" style="align-items:flex-end;">
             <input
               type="email"
@@ -653,9 +662,23 @@
             <button class="btn secondary" id="sendMagicLinkBtn">Send login link</button>
             <button class="btn secondary" id="signOutBtn" style="display:none;">Sign out</button>
           </div>
+
+          <!-- OAuth buttons -->
+          <div class="row-flex" style="margin-top:0.45rem;flex-wrap:wrap;">
+            <button class="btn secondary oauth" id="googleLoginBtn">
+              <span>🔵</span>
+              <span>Continue with Google</span>
+            </button>
+            <button class="btn secondary oauth" id="appleLoginBtn">
+              <span></span>
+              <span>Continue with Apple</span>
+            </button>
+          </div>
+
           <div class="small-text" id="authStatus" style="margin-top:0.3rem;">
             Not signed in.
           </div>
+
           <div class="row-flex" style="margin-top:0.5rem;">
             <button class="btn secondary" id="saveCloudBtn">Save to Cloud</button>
             <button class="btn secondary" id="loadCloudBtn">Load from Cloud</button>
@@ -715,8 +738,8 @@
   <!-- Supabase client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
-    const SUPABASE_URL = "YOUR_SUPABASE_URL";
-    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    const SUPABASE_URL = "https://stdcansnairauyoycwzp.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZGNhbnNuYWlyYXV5b3ljd3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2MjI0MDQsImV4cCI6MjA4MDE5ODQwNH0.qF40W4jTevgHAHTF9q2aoXmGig4IsI_eYWihTQk45Uo";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
 
@@ -738,7 +761,7 @@
       max: 150,
       theme: "light",
       dailyMode: false,
-      challengeStartDate: null, // set on first run
+      challengeStartDate: null,
     };
 
     function formatMoney(n) {
@@ -962,6 +985,8 @@
     const saveCloudBtn = document.getElementById("saveCloudBtn");
     const loadCloudBtn = document.getElementById("loadCloudBtn");
     const cloudStatusEl = document.getElementById("cloudStatus");
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    const appleLoginBtn = document.getElementById("appleLoginBtn");
 
     themeSelect.value = settings.theme;
     goalInput.value = settings.goal;
@@ -1002,7 +1027,7 @@
     }
 
     function computeRecommendation() {
-      const { totalSaved, daysDone } = computeStats();
+      const { totalSaved } = computeStats();
       const goal = settings.goal;
       const challengeDay = getChallengeDayNumber();
 
@@ -1108,51 +1133,15 @@
 
     function renderAchievements(totalSaved, daysDone, streak) {
       const achievements = [
-        {
-          id: "first_save",
-          label: "First Save",
-          check: () => totalSaved > 0,
-        },
-        {
-          id: "1k_club",
-          label: "$1,000 Club",
-          check: () => totalSaved >= 1000,
-        },
-        {
-          id: "5k_club",
-          label: "$5,000 Club",
-          check: () => totalSaved >= 5000,
-        },
-        {
-          id: "10k_club",
-          label: "$10,000 Club",
-          check: () => totalSaved >= 10000,
-        },
-        {
-          id: "halfway",
-          label: "Halfway Hero (50%)",
-          check: () => totalSaved >= settings.goal * 0.5,
-        },
-        {
-          id: "streak_7",
-          label: "7-Day Streak",
-          check: () => streak.longest >= 7,
-        },
-        {
-          id: "streak_30",
-          label: "30-Day Streak",
-          check: () => streak.longest >= 30,
-        },
-        {
-          id: "30_days_done",
-          label: "30 Squares Completed",
-          check: () => daysDone >= 30,
-        },
-        {
-          id: "all_done",
-          label: "Grid Finisher",
-          check: () => daysDone >= DAYS,
-        },
+        { id: "first_save", label: "First Save", check: () => totalSaved > 0 },
+        { id: "1k_club", label: "$1,000 Club", check: () => totalSaved >= 1000 },
+        { id: "5k_club", label: "$5,000 Club", check: () => totalSaved >= 5000 },
+        { id: "10k_club", label: "$10,000 Club", check: () => totalSaved >= 10000 },
+        { id: "halfway", label: "Halfway Hero (50%)", check: () => totalSaved >= settings.goal * 0.5 },
+        { id: "streak_7", label: "7-Day Streak", check: () => streak.longest >= 7 },
+        { id: "streak_30", label: "30-Day Streak", check: () => streak.longest >= 30 },
+        { id: "30_days_done", label: "30 Squares Completed", check: () => daysDone >= 30 },
+        { id: "all_done", label: "Grid Finisher", check: () => daysDone >= DAYS },
       ];
 
       achievementsEl.innerHTML = "";
@@ -1505,7 +1494,7 @@
     function updateAuthUI() {
       if (!authStatusEl || !signOutBtn) return;
       if (!currentUser) {
-        setAuthStatus("Not signed in. Enter your email and tap 'Send login link'.");
+        setAuthStatus("Not signed in. Use email, Google, or Apple to log in.");
         signOutBtn.style.display = "none";
       } else {
         setAuthStatus(`Signed in as ${currentUser.email || "your account"}.`);
@@ -1549,6 +1538,21 @@
       currentUser = null;
       updateAuthUI();
       setCloudStatus("Signed out.");
+    }
+
+    async function signInWithProvider(provider) {
+      setAuthStatus(`Redirecting to ${provider}…`);
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.href
+        }
+      });
+      if (error) {
+        console.error(error);
+        setAuthStatus(`Error starting ${provider} login.`);
+      }
+      // User will be redirected; when they return, refreshAuth() will pick up session.
     }
 
     async function saveToCloud() {
@@ -1788,6 +1792,16 @@
         loadFromCloud();
       });
     }
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener("click", () => {
+        signInWithProvider("google");
+      });
+    }
+    if (appleLoginBtn) {
+      appleLoginBtn.addEventListener("click", () => {
+        signInWithProvider("apple");
+      });
+    }
 
     // Initial render + auth refresh
     renderAll();
@@ -1795,4 +1809,3 @@
   </script>
 </body>
 </html>
-

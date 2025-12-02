@@ -502,6 +502,35 @@
       margin-top: 0.4rem;
     }
 
+    /* Main progress bar above grid */
+    .main-progress {
+      margin: 0.4rem 0 0.4rem;
+      padding: 0.5rem 0.7rem;
+      border-radius: 0.75rem;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+    }
+    .main-progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+    .main-progress-label {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+    .main-progress-amount {
+      font-variant-numeric: tabular-nums;
+    }
+    .main-progress .progress-bg {
+      height: 8px;
+    }
+
     @media (max-width: 480px) {
       .header {
         align-items: flex-start;
@@ -535,6 +564,21 @@
 
     <main class="main-content">
       <div class="grid-panel">
+        <!-- Main progress bar above grid -->
+        <div class="main-progress">
+          <div class="main-progress-top">
+            <span class="main-progress-label" id="mainProgressLabel">
+              0% of your goal saved
+            </span>
+            <span class="main-progress-amount" id="mainProgressAmount">
+              $0 / $30,000
+            </span>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill" id="mainProgressFill"></div>
+          </div>
+        </div>
+
         <div class="grid-title-row">
           <div class="grid-title">Your savings challenge grid</div>
           <div class="recommendation-chip" id="recommendationChip">
@@ -638,6 +682,7 @@
           <div class="section-title">Account & Cloud Sync</div>
           <div class="small-text" style="margin-bottom:0.35rem;">
             Log in with your email to back up your Cash Quest data to Supabase and restore it on any device.
+            When you’re signed in, changes are auto-saved to the cloud shortly after you update your grid.
           </div>
 
           <div class="row-flex" style="align-items:flex-end;">
@@ -960,6 +1005,10 @@
     const loadCloudBtn = document.getElementById("loadCloudBtn");
     const cloudStatusEl = document.getElementById("cloudStatus");
 
+    const mainProgressFillEl = document.getElementById("mainProgressFill");
+    const mainProgressLabelEl = document.getElementById("mainProgressLabel");
+    const mainProgressAmountEl = document.getElementById("mainProgressAmount");
+
     themeSelect.value = settings.theme;
     goalInput.value = settings.goal;
     minInput.value = settings.min;
@@ -967,6 +1016,32 @@
     toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
 
     let currentUser = null;
+    let cloudDirty = false;
+    let cloudSyncTimer = null;
+
+    function setAuthStatus(msg) {
+      if (authStatusEl) authStatusEl.textContent = msg;
+    }
+    function setCloudStatus(msg, isError = false) {
+      if (!cloudStatusEl) return;
+      cloudStatusEl.textContent = "Cloud status: " + msg;
+      cloudStatusEl.style.color = isError ? "#b91c1c" : "var(--text-muted)";
+    }
+
+    function scheduleCloudSync() {
+      if (!currentUser) {
+        return;
+      }
+      cloudDirty = true;
+      setCloudStatus("Auto-saving…");
+      if (cloudSyncTimer) {
+        clearTimeout(cloudSyncTimer);
+      }
+      cloudSyncTimer = setTimeout(() => {
+        cloudDirty = false;
+        saveToCloud(true);
+      }, 2000);
+    }
 
     function computeStats() {
       let totalSaved = 0;
@@ -1152,6 +1227,7 @@
         remove.addEventListener("click", () => {
           rewards.splice(idx, 1);
           saveRewards(rewards);
+          scheduleCloudSync();
           renderStatsAndMeta();
         });
         row.appendChild(left);
@@ -1178,6 +1254,13 @@
       daysDoneEl.textContent = `${daysDone}/${DAYS}`;
       progressFillEl.style.width = Math.min(percent, 100).toFixed(1) + "%";
       progressTextEl.textContent = `${totalSaved.toLocaleString()} / ${goal.toLocaleString()} saved`;
+
+      if (mainProgressFillEl && mainProgressLabelEl && mainProgressAmountEl) {
+        const clamped = Math.min(percent, 100);
+        mainProgressFillEl.style.width = clamped.toFixed(1) + "%";
+        mainProgressLabelEl.textContent = `${clamped.toFixed(1)}% of your goal saved`;
+        mainProgressAmountEl.textContent = `${formatMoney(totalSaved)} / ${formatMoney(goal)}`;
+      }
 
       const streak = loadStreak();
       currentStreakEl.textContent = streak.current;
@@ -1255,6 +1338,7 @@
             setTimeout(() => cell.classList.remove("pop"), 200);
           }
           saveDoneSet(doneSet);
+          scheduleCloudSync();
           renderStatsAndMeta();
           if (doneSet.has(idx)) {
             cell.classList.add("done");
@@ -1281,6 +1365,7 @@
         notes[idx] = trimmed;
       }
       saveNotes(notes);
+      scheduleCloudSync();
       renderGrid();
       renderStatsAndMeta();
     }
@@ -1314,6 +1399,7 @@
         doneSet.add(idx);
         saveDoneSet(doneSet);
         registerSaveEvent();
+        scheduleCloudSync();
       }
       renderAll();
       const cell = document.getElementById("cell-" + idx);
@@ -1331,6 +1417,7 @@
         doneSet.add(idx);
         saveDoneSet(doneSet);
         registerSaveEvent();
+        scheduleCloudSync();
       }
       renderAll();
       const cell = document.getElementById("cell-" + idx);
@@ -1372,6 +1459,7 @@
       }
       saveDoneSet(doneSet);
       registerSaveEvent();
+      scheduleCloudSync();
       renderAll();
       const firstIdx = touched[0];
       const cell = document.getElementById("cell-" + firstIdx);
@@ -1450,16 +1538,8 @@
       toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
 
       renderAll();
+      scheduleCloudSync();
       alert("Import successful!");
-    }
-
-    function setAuthStatus(msg) {
-      if (authStatusEl) authStatusEl.textContent = msg;
-    }
-    function setCloudStatus(msg, isError = false) {
-      if (!cloudStatusEl) return;
-      cloudStatusEl.textContent = "Cloud status: " + msg;
-      cloudStatusEl.style.color = isError ? "#b91c1c" : "var(--text-muted)";
     }
 
     function updateAuthUI() {
@@ -1511,12 +1591,14 @@
       setCloudStatus("Signed out.");
     }
 
-    async function saveToCloud() {
+    async function saveToCloud(isAuto = false) {
       if (!currentUser) {
-        alert("Sign in first to use cloud backup.");
+        if (!isAuto) {
+          alert("Sign in first to use cloud backup.");
+        }
         return;
       }
-      setCloudStatus("Saving…");
+      setCloudStatus(isAuto ? "Auto-saving…" : "Saving…");
       const payload = buildExportData();
       try {
         const { error } = await supabaseClient
@@ -1528,13 +1610,13 @@
           });
         if (error) {
           console.error(error);
-          setCloudStatus("Error saving.", true);
+          setCloudStatus(isAuto ? "Auto-save error." : "Error saving.", true);
           return;
         }
-        setCloudStatus("Saved successfully ✔");
+        setCloudStatus(isAuto ? "Auto-saved ✔" : "Saved successfully ✔");
       } catch (err) {
         console.error(err);
-        setCloudStatus("Unexpected error while saving.", true);
+        setCloudStatus(isAuto ? "Auto-save failed." : "Unexpected error while saving.", true);
       }
     }
 
@@ -1603,6 +1685,7 @@
       settings.theme = themeSelect.value;
       saveSettings(settings);
       document.body.setAttribute("data-theme", settings.theme);
+      scheduleCloudSync();
     });
 
     applyGoalBtn.addEventListener("click", () => {
@@ -1632,6 +1715,7 @@
       saveStreak({ lastSaveDate: null, current: 0, longest: 0 });
       amounts = generateAmounts(settings.goal, settings.min, settings.max);
       saveAmounts(amounts);
+      scheduleCloudSync();
       renderAll();
     });
 
@@ -1639,6 +1723,7 @@
       settings.dailyMode = !settings.dailyMode;
       saveSettings(settings);
       toggleDailyModeBtn.textContent = "Daily Save: " + (settings.dailyMode ? "On" : "Off");
+      scheduleCloudSync();
     });
 
     dailyPickBtn.addEventListener("click", () => {
@@ -1666,6 +1751,7 @@
       saveSettings(settings);
       amounts = generateAmounts(settings.goal, settings.min, settings.max);
       saveAmounts(amounts);
+      scheduleCloudSync();
       renderAll();
     });
 
@@ -1687,6 +1773,7 @@
       notes = {};
       rewards = [];
       saveRewards(rewards);
+      scheduleCloudSync();
       toggleDailyModeBtn.textContent = "Daily Save: Off";
       renderAll();
     });
@@ -1700,6 +1787,7 @@
       }
       rewards.push({ label, amount: amt });
       saveRewards(rewards);
+      scheduleCloudSync();
       rewardLabelInput.value = "";
       rewardAmountInput.value = "";
       renderStatsAndMeta();
@@ -1737,7 +1825,7 @@
     }
     if (saveCloudBtn) {
       saveCloudBtn.addEventListener("click", () => {
-        saveToCloud();
+        saveToCloud(false);
       });
     }
     if (loadCloudBtn) {
